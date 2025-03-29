@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huffman File Zipper</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Ensure scripts load properly -->
+    <script src="BinaryHeap.js" type="module"></script>
+    <script src="HuffmanCoder.js" type="module"></script>
+    <script src="script.js" type="module"></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-light" style="font-size: 25px; font-family: sans-serif; background-color: whitesmoke; text-align: center;">
+        File Zipper using Huffman Encoding and Decoding
+    </nav>
+
+    <!-- Main Container -->
+    <div id="container" class="d-flex justify-content-center mt-3">
+        <!-- Tree Structure Display -->
+        <div class="text_box p-3 border rounded shadow-sm m-2" style="overflow-y: auto; width: 40%; height: 300px;">
+            <span id="treearea" style="display: block; text-align: center; font-size: medium;">
+                Tree Structure Will Be Displayed Here !!
+            </span>
+        </div>
+
+        <!-- Operation Info Display -->
+        <div class="text_box p-3 border rounded shadow-sm m-2" style="overflow-y: auto; width: 40%; height: 300px;">
+            <span id="temptext" style="display: block; text-align: center; font-size: x-large;">
+                Operation info will be shown here !!
+            </span>
+        </div>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="text-center mt-3">
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" id="uploadedFile" class="form-control-file"/>
+        </form>
+    </div>
+
+    <!-- Buttons -->
+    <div class="text-center mt-3">
+        <button type="button" class="btn btn-success m-2" id="encode">Encode</button>
+        <button type="button" class="btn btn-danger m-2" id="decode">Decode</button>
+    </div>
+    <script type="module">
+        import { HuffmanCoder } from './huffman.js';
+    
+        document.getElementById("encode").addEventListener("click", () => {
+            const fileInput = document.getElementById("uploadedFile");
+            if (!fileInput.files.length) {
+                alert("Please upload a file first.");
+                return;
+            }
+    
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                let content = event.target.result;
+                const originalSize = new Blob([content]).size; // Get original file size in bytes
+    
+                const coder = new HuffmanCoder();
+                let [encodedData, tree, info] = coder.encode(content);
+    
+                // Calculate compressed size
+                const compressedSize = new Blob([encodedData]).size;
+                const compressionRatio = (originalSize / compressedSize).toFixed(2);
+                const compressionPercentage = ((1 - compressedSize / originalSize) * 100).toFixed(2);
+    
+                // Update UI
+                document.getElementById("treearea").innerText = tree;
+                document.getElementById("temptext").innerText = 
+                    `Compression complete! 📉\nOriginal Size: ${originalSize} bytes\nCompressed Size: ${compressedSize} bytes\nCompression Ratio: ${compressionRatio}x\nSpace Savings: ${compressionPercentage}%`;
+    
+                // Download the encoded file
+                const blob = new Blob([encodedData], { type: "text/plain" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "encoded.txt";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            reader.readAsText(fileInput.files[0]);
+        });
+    
+        document.getElementById("decode").addEventListener("click", () => {
+            const fileInput = document.getElementById("uploadedFile");
+            if (!fileInput.files.length) {
+                alert("Please upload an encoded file first.");
+                return;
+            }
+    
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                let encodedContent = event.target.result;
+                const coder = new HuffmanCoder();
+                let [decodedData, tree, info] = coder.decode(encodedContent);
+    
+                // Update UI
+                document.getElementById("treearea").innerText = tree;
+                document.getElementById("temptext").innerText = "Decompression complete! ✅\nThe file has been restored.";
+    
+                // Download the decoded file
+                const blob = new Blob([decodedData], { type: "text/plain" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "decoded.txt";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            reader.readAsText(fileInput.files[0]);
+        });
+    </script>
+    
